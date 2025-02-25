@@ -4,8 +4,8 @@ import random
 #import PIL
 
 # 全局定义
-SCREEN_X = 600
-SCREEN_Y = 600
+SCREEN_X = 1200
+SCREEN_Y = 800
 
 
 # 蛇类
@@ -25,15 +25,15 @@ class Snake(object):
             left,top = (self.body[0].left,self.body[0].top)
         node = pygame.Rect(left,top,25,25)
         if self.dirction == pygame.K_LEFT:
-            node.left -= 25
+            node.left -= 5
         elif self.dirction == pygame.K_RIGHT:
-            node.left += 25
+            node.left += 5
         elif self.dirction == pygame.K_UP:
-            node.top -= 25
+            node.top -= 5
         elif self.dirction == pygame.K_DOWN:
-            node.top += 25
+            node.top += 5
         self.body.insert(0,node)
-        
+
     # 删除最后一个块
     def delnode(self):
         self.body.pop()
@@ -162,7 +162,7 @@ def main():
         show_text(screen,(50,550),"马明的分数： "+str(scores),(223,223,223))
         
         pygame.display.update()
-        clock.tick(10)
+        clock.tick(60)
     
     
 if __name__ == '__main__':
