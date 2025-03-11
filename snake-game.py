@@ -9,6 +9,7 @@ SCREEN_Y = 600
 # 蛇类
 class Snake(object):
     def __init__(self):
+        self.add_num = 0
         self.target_direction = pygame.K_RIGHT
         self.direction = pygame.K_RIGHT
         self.speed = 4
@@ -49,7 +50,10 @@ class Snake(object):
 
     def move(self):
         self.addnode()
-        self.delnode()
+        if self.add_num == 0:
+            self.delnode()
+        else:
+            self.add_num -= 1
 
     def check_turn(self):
         head = self.body[0]
@@ -65,15 +69,20 @@ class Snake(object):
             self.target_direction = pygame.K_UP
         elif new_direction == pygame.K_DOWN and self.direction != pygame.K_UP:
             self.target_direction = pygame.K_DOWN
+
+    def add_new(self):
+        self.add_num = 5
+
 # 食物类
 class Food:
     def __init__(self):
         self.rect = pygame.Rect(-20, 0, 20, 20)
         self.allposx = []
         self.allposy = []
-        for pos in range(20, SCREEN_X - 20, 20):
+        self.surtime = 20
+        for pos in range(0, SCREEN_X - 20, 20):
             self.allposx.append(pos)
-        for pos in range(20, SCREEN_Y - 20, 20):
+        for pos in range(0, SCREEN_Y - 20, 20):
             self.allposy.append(pos)
 
     def remove(self):
@@ -87,11 +96,18 @@ class Food:
                 if not any(self.rect.colliderect(part) for part in snake_body):
                     break
             print(self.rect)
+    def sur_time(self):
+        self.surtime -= 1
+        if self.surtime == 0:
+            return True
+        else:
+            return False
 
 class Obstacle:
     def __init__(self):
         self.allposx = []
         self.allposy = []
+        self.surtime = 20
         self.rect = pygame.Rect(-20, 20, 20, 20)
         for pos in range(0, SCREEN_X - 20, 20):
             self.allposx.append(pos)
@@ -110,6 +126,12 @@ class Obstacle:
                     break
             print(self.rect)
 
+    def sur_time(self):
+        self.surtime -= 1
+        if self.surtime == 0:
+            return True
+        else:
+            return False
 
 def show_text(screen, pos, text, color, font_bold=False, font_size=50, font_italic=False):
     cur_font = pygame.font.SysFont("宋体", font_size)
@@ -127,11 +149,10 @@ def main():
     isdead = False
     frame = 0
     time_s = 0
-
-    # 蛇/食物
+    food_list = []
+    obstacle_list = []
+    # 蛇/食物/障碍物
     snake = Snake()
-    food = Food()
-    obstacle = Obstacle()
     # 定义网格参数
     grid_size = 20
     grid_color = (200, 200, 200)
@@ -158,43 +179,59 @@ def main():
         draw_grid()
 
         # 画蛇身 / 每一步+1分
-        if not isdead or scores < 0:
-            if frame in [10,20,30]:
+        if scores < 0 or not isdead:
+            if frame in [10, 20, 30]:
                 scores += 1
             snake.check_turn()
             snake.move()
         for rect in snake.body:
             pygame.draw.rect(screen, (20, 220, 39), rect, 0)
 
-        # 显示死亡文字
-        isdead = snake.isdead()
-        if isdead:
-            show_text(screen, (200, 250), 'YOU DEAD!', (227, 29, 18), False, 100)
-            show_text(screen, (260, 330), 'press space to try again...', (0, 0, 22), False, 30)
 
-        # 食物处理 / 吃到+50分
-        if food.rect == snake.body[0]:
-            scores += 50
-            food.remove()
-            snake.addnode()
-
-        if obstacle.rect == snake.body[0]:
-            scores -= 50
-            obstacle.remove()
-            snake.delnode()
 
         # 食物投递
-        food.set(snake.body)
-        pygame.draw.rect(screen, (136, 0, 21), food.rect, 0)
+        if time_s % 5 == 0 and frame == 2:
+            food = Food()
+            food.set(snake.body)
+            food_list.append(food)
+            # 障碍物生成
+        if time_s % 8 == 0 and frame == 2:
+            obstacle = Obstacle()
+            obstacle.set(snake.body)
+            obstacle_list.append(obstacle)
 
-        # 障碍物生成
-        obstacle.set(snake.body)
-        pygame.draw.rect(screen, (70, 70, 70), obstacle.rect, 0)
+        # 食物处理 / 吃到+50分
+        for fd in food_list:
+            pygame.draw.rect(screen, (136, 0, 21), fd.rect, 0)
+            if fd.rect == snake.body[0] or (frame == 1 and fd.sur_time()):
+                if fd.rect == snake.body[0]:
+                    scores += 50
+                fd.remove()
+                food_ln = [item for item in food_list if item != fd]
+                food_list = food_ln
+                snake.add_new()
+
+        # 显示死亡文字
+        isdead = snake.isdead()
+
+        for ob in obstacle_list:
+            pygame.draw.rect(screen, (70, 70, 70), ob.rect, 0)
+            if ob.rect == snake.body[0] or (frame == 1 and ob.sur_time()):
+                if ob.rect == snake.body[0]:
+                    scores -= 50
+                ob.remove()
+                obstacle_ln = [item for item in obstacle_list if item != ob]
+                obstacle_list = obstacle_ln
+                for i in range(5): snake.delnode()
+
+        if isdead:
+                show_text(screen, (200, 250), 'YOU DEAD!', (227, 29, 18), False, 100)
+                show_text(screen, (260, 330), 'press space to try again...', (0, 0, 22), False, 30)
 
         # 显示分数文字
         show_text(screen, (10, 500), 'Scores: ' + str(scores), (223, 223, 223))
         show_text(screen, (10, 550), 'your position:' + str(snake.show_po()), (223, 223, 223))
-        show_text(screen, (600,10), 'game time:' + str(time_s), (223, 223, 223))
+        show_text(screen, (600, 10), 'game time:' + str(time_s), (223, 223, 223))
 
         pygame.display.update()
         if frame == 30:
