@@ -17,6 +17,14 @@ class Snake(object):
         for x in range(10):
             self.addnode()
 
+    def speed_plus(self, scores):
+        if self.speed == 4:
+            if scores > 500:
+                self.speed = 5
+        elif self.speed == 5:
+            if scores > 1500:
+                self.speed = 10
+
     def addnode(self):
         left, top = (0, 0)
         if self.body:
@@ -178,6 +186,9 @@ def main():
         screen.fill((66, 188, 245))
         draw_grid()
 
+        if frame == 1:
+            snake.speed_plus(scores)
+
         # 画蛇身 / 每一步+1分
         if scores < 0 or not isdead:
             if frame in [10, 20, 30]:
@@ -213,6 +224,9 @@ def main():
 
         # 显示死亡文字
         isdead = snake.isdead()
+        if isdead:
+                show_text(screen, (200, 250), 'YOU DEAD!', (227, 29, 18), False, 100)
+                show_text(screen, (260, 330), 'press space to try again...', (0, 0, 22), False, 30)
 
         for ob in obstacle_list:
             pygame.draw.rect(screen, (70, 70, 70), ob.rect, 0)
@@ -224,15 +238,17 @@ def main():
                 obstacle_list = obstacle_ln
                 for i in range(5): snake.delnode()
 
-        if isdead:
-                show_text(screen, (200, 250), 'YOU DEAD!', (227, 29, 18), False, 100)
-                show_text(screen, (260, 330), 'press space to try again...', (0, 0, 22), False, 30)
-
         # 显示分数文字
         show_text(screen, (10, 500), 'Scores: ' + str(scores), (223, 223, 223))
         show_text(screen, (10, 550), 'your position:' + str(snake.show_po()), (223, 223, 223))
-        show_text(screen, (600, 10), 'game time:' + str(time_s), (223, 223, 223))
-
+        show_text(screen, (550, 10), 'game time:' + str(time_s), (223, 223, 223))
+        #模式区分显示
+        if snake.speed == 4:
+            show_text(screen, (10, 10), 'easy', (223, 223, 223))
+        elif snake.speed == 5:
+            show_text(screen, (10, 10), 'normal', (223, 223, 0))
+        else:
+            show_text(screen, (10, 10), 'hard', (225, 0, 0))
         pygame.display.update()
         if frame == 30:
             frame = 0
